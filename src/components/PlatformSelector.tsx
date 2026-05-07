@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Globe, Share2, BookOpen, Code, Terminal, MessageSquare, Layout, MessageCircle, FileText, AlignLeft, Layers, Columns } from 'lucide-react';
+import { ChevronDown, Globe, Share2, BookOpen, MessageSquare, Layout, MessageCircle, FileText, AlignLeft, Layers, Columns, Terminal, TrendingUp } from 'lucide-react';
 
 interface Platform {
   id: string;
@@ -10,21 +10,23 @@ interface Platform {
 }
 
 const PLATFORMS: Platform[] = [
-  { id: 'zhihu', name: 'Zhihu (知乎)', desc: 'High-authority technical article', icon: <Share2 />, color: 'text-blue-500' },
-  { id: 'wechat', name: 'WeChat (微信)', desc: 'Vertical ecosystem newsletter', icon: <MessageCircle />, color: 'text-emerald-500' },
-  { id: 'github', name: 'GitHub MD', desc: 'Technical documentation & README', icon: <Code />, color: 'text-slate-800' },
-  { id: 'xiaohongshu', name: 'XHS (小红书)', desc: 'Concise tech lifestyle/notes', icon: <Layout />, color: 'text-red-500' },
-  { id: 'linkedin', name: 'LinkedIn', desc: 'Professional global B2B content', icon: <Globe />, color: 'text-blue-700' },
-  { id: 'reddit', name: 'Reddit / Forum', desc: 'Community-driven tech discussion', icon: <MessageSquare />, color: 'text-orange-500' },
-  { id: 'blog', name: 'Tech Blog', desc: 'Detailed technical analysis', icon: <BookOpen />, color: 'text-indigo-500' },
+  { id: 'zhihu', name: '知乎 (Zhihu)', desc: '高权威技术长文 / QA', icon: <Share2 />, color: 'text-blue-500' },
+  { id: 'wechat', name: '微信公众号', desc: '垂直生态圈深度文章', icon: <MessageCircle />, color: 'text-emerald-500' },
+  { id: 'xiaohongshu', name: '小红书 (XHS)', desc: '极简技术笔记 / 评测', icon: <Layout />, color: 'text-red-500' },
+  { id: 'weibo', name: '微博 (Weibo)', desc: '短平快技术动态 / 话题', icon: <MessageSquare />, color: 'text-orange-500' },
+  { id: 'baijiahao', name: '百家号', desc: '百度生态收录 / 搜索流量', icon: <Globe />, color: 'text-blue-600' },
+  { id: 'toutiao', name: '今日头条', desc: '算法推荐 / 资讯分发', icon: <TrendingUp />, color: 'text-red-600' },
+  { id: 'blog', name: '技术博客', desc: '独立站 / 详细技术分析', icon: <BookOpen />, color: 'text-indigo-500' },
 ];
 
 const FORMATS: Platform[] = [
-  { id: 'long_form', name: '📝 Deep Dive (长文详析/教程)', desc: '>2000 words. Comprehensive and logic-heavy.', icon: <AlignLeft />, color: 'text-slate-600' },
-  { id: 'short_social', name: '⚡ Social Post (短帖/引流)', desc: '<500 words. High impact, scannable.', icon: <FileText />, color: 'text-amber-500' },
-  { id: 'comparison', name: '📊 Matrix/Review (横评/避坑)', desc: 'Structured Pros/Cons or Tables.', icon: <Columns />, color: 'text-indigo-600' },
-  { id: 'api_docs', name: '🔧 Dev Tutorial (开发者指南)', desc: 'Code-first API or architecture guide.', icon: <Terminal />, color: 'text-emerald-500' },
-  { id: 'news', name: '📰 Newsletter (快报/PR)', desc: 'Polished B2B corporate update.', icon: <Layers />, color: 'text-blue-400' },
+  { id: 'long_form', name: '📝 深度长文 (Deep Dive)', desc: '>2000字，权威分析与逻辑推导', icon: <AlignLeft />, color: 'text-slate-600' },
+  { id: 'tldr', name: '📋 TL;DR 极简摘要', desc: '<300字，核心结论一句话说清', icon: <FileText />, color: 'text-amber-500' },
+  { id: 'short_social', name: '⚡ 短帖引流 (Social Post)', desc: '<500字，高冲击力一扫即懂', icon: <MessageSquare />, color: 'text-blue-500' },
+  { id: 'comparison', name: '📊 横评/对比 (Matrix)', desc: '结构化优劣对比或规格表格', icon: <Columns />, color: 'text-indigo-600' },
+  { id: 'listicle', name: '📌 干货清单 (Listicle)', desc: '条目式干货，便于收藏转发', icon: <Layers />, color: 'text-emerald-600' },
+  { id: 'api_docs', name: '🔧 开发者指南 (Tutorial)', desc: '代码优先的 API / 架构指南', icon: <Terminal />, color: 'text-emerald-500' },
+  { id: 'news', name: '📰 快报/PR 通稿', desc: '精炼的企业技术新闻通报', icon: <Globe />, color: 'text-blue-400' },
 ];
 
 interface Props {
