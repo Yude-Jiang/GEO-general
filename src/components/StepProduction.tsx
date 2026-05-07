@@ -11,8 +11,10 @@ import {
 } from '../services/geminiService';
 import type { TranslationKeys } from '../i18n/translations';
 import type { PlaybookAnchorBundle } from '../types';
+import { useHistoryStore } from '../store/historyStore';
+import { generateId } from '../utils/id';
 import {
-  ArrowLeft, Loader2, Zap,
+  ArrowLeft, Loader2, Zap, Save, Crosshair,
   ShieldCheck, Lightbulb, Edit3,
   Search as SearchIcon, CheckCircle2, Circle, ChevronDown, FileText,
 } from 'lucide-react';
@@ -71,6 +73,7 @@ const StepProduction: React.FC<{ t: TranslationKeys }> = ({ t }) => {
   const selectedMonitoringQuestions = useWorkflowStore(state => state.selectedMonitoringQuestions);
   const diagnosisResult = useWorkflowStore(state => state.diagnosisResult);
   const setStep = useWorkflowStore(state => state.setStep);
+  const seedKeywords = useWorkflowStore(state => state.seedKeywords);
   const persistedSources = useWorkflowStore(state => state.persistedSources);
   const setPersistedSources = useWorkflowStore(state => state.setPersistedSources);
 
@@ -343,6 +346,28 @@ const StepProduction: React.FC<{ t: TranslationKeys }> = ({ t }) => {
   const anyGenerating = bundleOutputs.some(o => o.isGenerating);
   const doneCount = bundleOutputs.filter(o => o.content.length > 0).length;
 
+  // ── Save to history ──────────────────────────────────────────────────────
+  const handleSaveHistory = () => {
+    const addEntry = useHistoryStore.getState().addEntry;
+    const activeContent = bundleOutputs[activeBundleIdx]?.content || '';
+    const title = seedKeywords.slice(0, 3).join(', ').slice(0, 60) || 'Untitled';
+    addEntry({
+      id: generateId(),
+      title,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      seedKeywords,
+      ecosystem: targetEcosystem,
+      uiLang,
+      diagnosisResult,
+      selectedMonitoringQuestions,
+      selectedPlaybooks,
+      finalContent: activeContent,
+      step: 3,
+    });
+    alert((t as any).history?.savedToast || 'Saved to history');
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
@@ -371,6 +396,13 @@ const StepProduction: React.FC<{ t: TranslationKeys }> = ({ t }) => {
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
+          {/* Save to History */}
+          <button
+            onClick={handleSaveHistory}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all"
+          >
+            <Save className="w-3.5 h-3.5" /> {(t as any).history?.saveBtn || 'Save'}
+          </button>
           {/* Progress dots — one per bundle */}
           {!isFreeform && (
             <div className="flex items-center gap-1.5" title={`${doneCount}/${bundles.length} generated`}>
@@ -463,6 +495,63 @@ const StepProduction: React.FC<{ t: TranslationKeys }> = ({ t }) => {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Active Strategy Detail Panel ── */}
+          {!isFreeform && activeBundle && (
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-900 to-blue-950 px-5 py-3 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-blue-400" />
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                  {activeBundle.playbook.tacticsType}
+                </span>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {/* Source Logic */}
+                <div className="px-5 py-4">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">
+                    {(t.strategy as any).sourceLogic || 'Strategy Logic'}
+                  </span>
+                  <p className="text-sm font-bold text-blue-900 leading-relaxed">
+                    {activeBundle.playbook.sourceLogic}
+                  </p>
+                </div>
+                {/* GEO Action */}
+                <div className="px-5 py-4">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">
+                    {(t.strategy as any).geoAction || 'GEO Action'}
+                  </span>
+                  <p className="text-sm text-slate-700 font-medium leading-relaxed">
+                    {activeBundle.playbook.geoAction}
+                  </p>
+                </div>
+                {/* Target Snippet */}
+                <div className="px-5 py-4 bg-amber-50/50">
+                  <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 block flex items-center gap-1">
+                    🎯 {(t.strategy as any).targetSnippet || 'Target Snippet'}
+                  </span>
+                  <p className="text-[11px] text-amber-900 font-mono font-bold leading-relaxed whitespace-pre-wrap break-words">
+                    {activeBundle.playbook.targetSnippet}
+                  </p>
+                </div>
+                {/* Anchors */}
+                {activeBundle.anchors.length > 0 && (
+                  <div className="px-5 py-4">
+                    <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-2 block">
+                      <Crosshair className="w-3 h-3 inline mr-1" /> Bound Anchors ({activeBundle.anchors.length})
+                    </span>
+                    <div className="space-y-2">
+                      {activeBundle.anchors.map(a => (
+                        <div key={a.id} className="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+                          <p className="text-[11px] font-bold text-blue-900 leading-snug mb-1">{a.userPrompt}</p>
+                          <p className="text-[10px] text-indigo-600 font-mono font-bold">{a.expectedAnchor}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

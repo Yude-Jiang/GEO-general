@@ -4,6 +4,58 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { GeoSignals } from '../services/structuralParser';
 
+/** Simple JSON syntax highlighter — splits by token type and wraps in <span> */
+function highlightJson(raw: string): React.ReactNode[] {
+  const tokens: React.ReactNode[] = [];
+  const regex = /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(true|false|null)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|([{}[\],])|(\s+)/g;
+  let lastIndex = 0;
+  let key = 0;
+
+  // Fallback: if regex fails, return raw text
+  try {
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(raw)) !== null) {
+      // Text before match
+      if (match.index > lastIndex) {
+        tokens.push(<span key={key++} className="text-slate-500">{raw.slice(lastIndex, match.index)}</span>);
+      }
+
+      if (match[1]) {
+        // JSON key (quoted string before colon)
+        tokens.push(<span key={key++} className="text-blue-300">{match[1]}</span>);
+        tokens.push(<span key={key++} className="text-slate-500">:</span>);
+      } else if (match[2]) {
+        // JSON string value
+        tokens.push(<span key={key++} className="text-emerald-300">{match[2]}</span>);
+      } else if (match[3]) {
+        // Boolean/null
+        tokens.push(<span key={key++} className="text-amber-300 font-bold">{match[3]}</span>);
+      } else if (match[4]) {
+        // Number
+        tokens.push(<span key={key++} className="text-fuchsia-300">{match[4]}</span>);
+      } else if (match[5]) {
+        // Punctuation
+        tokens.push(<span key={key++} className="text-slate-400">{match[5]}</span>);
+      } else if (match[6]) {
+        // Whitespace — preserve
+        tokens.push(<span key={key++}>{match[6]}</span>);
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+  } catch {
+    // Fallback: plain text
+    return [<span key={0}>{raw}</span>];
+  }
+
+  // Remaining text after last match
+  if (lastIndex < raw.length) {
+    tokens.push(<span key={key++} className="text-slate-500">{raw.slice(lastIndex)}</span>);
+  }
+
+  return tokens.length > 0 ? tokens : [<span key={0}>{raw}</span>];
+}
+
 interface Props {
   content: string;
   analysis: string;
@@ -260,8 +312,8 @@ const ProductOutputTabs: React.FC<Props> = ({
             )}
 
             {schemaStatus === 'success' && (
-              <pre className="flex-1 bg-slate-900 text-emerald-400 p-6 rounded-2xl font-mono text-[11px] overflow-auto shadow-inner">
-                {schema}
+              <pre className="flex-1 bg-slate-900 text-emerald-400 p-6 rounded-2xl font-mono text-[11px] leading-relaxed overflow-auto shadow-inner whitespace-pre-wrap break-all">
+                <code>{highlightJson(schema)}</code>
               </pre>
             )}
 

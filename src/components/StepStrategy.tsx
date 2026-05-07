@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWorkflowStore } from '../store/workflowStore';
+import { useHistoryStore } from '../store/historyStore';
+import { generateId } from '../utils/id';
 import type { StrategicPlaybookItem } from '../types';
 import type { TranslationKeys } from '../i18n/translations';
 import {
@@ -19,6 +21,9 @@ const StepStrategy: React.FC<StepStrategyProps> = ({ t }) => {
   const setStrategyConfirmed = useWorkflowStore(state => state.setStrategyConfirmed);
   const setStep = useWorkflowStore(state => state.setStep);
   const refinementStatus = useWorkflowStore(state => state.refinementStatus);
+  const targetEcosystem = useWorkflowStore(state => state.targetEcosystem);
+  const uiLang = useWorkflowStore(state => state.uiLang);
+  const seedKeywords = useWorkflowStore(state => state.seedKeywords);
 
   const [localPlaybooks, setLocalPlaybooks] = useState<StrategicPlaybookItem[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -63,6 +68,27 @@ const StepStrategy: React.FC<StepStrategyProps> = ({ t }) => {
     setSelectedPlaybooks(confirmed);
     setStrategyConfirmed(true);
     setStep(3);
+  };
+
+  const handleSaveHistory = () => {
+    const addEntry = useHistoryStore.getState().addEntry;
+    const confirmed = localPlaybooks.filter((_, i) => selectedIndices.has(i));
+    const title = seedKeywords.slice(0, 3).join(', ').slice(0, 60) || 'Untitled';
+    addEntry({
+      id: generateId(),
+      title,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      seedKeywords,
+      ecosystem: targetEcosystem,
+      uiLang,
+      diagnosisResult,
+      selectedMonitoringQuestions,
+      selectedPlaybooks: confirmed,
+      finalContent: '',
+      step: 2,
+    });
+    alert((t as any).history?.savedToast || 'Saved to history');
   };
 
   const getTacticsIcon = (type: string) => {
@@ -286,6 +312,10 @@ const StepStrategy: React.FC<StepStrategyProps> = ({ t }) => {
         <div className="bg-slate-900 text-white rounded-2xl shadow-xl p-6 flex items-center justify-between backdrop-blur-md">
           <div className="flex items-center gap-6">
             <button onClick={() => setStep(1)} className="text-xs font-black uppercase tracking-widest text-blue-400 hover:text-blue-300">{t.strategy.backDiagnosis}</button>
+            <div className="h-8 w-px bg-white/10" />
+            <button onClick={handleSaveHistory} className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+              <Save className="w-4 h-4" /> {(t as any).history?.saveBtn || 'Save'}
+            </button>
             <div className="h-8 w-px bg-white/10" />
             <div>
               <p className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Lock className="w-4 h-4 text-blue-400" />{selectedIndices.size} {t.strategy.selected}</p>

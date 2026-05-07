@@ -139,19 +139,66 @@ export const generateJsonLdSchema = async (content: string, uiLang: string, plat
   };
   const langName = langNames[uiLang] || uiLang;
 
-  const prompt = `You are a Schema.org expert. Based on the following content, generate a VALID JSON-LD structured data block (application/ld+json). The schema should include @context, @type (Article, TechArticle, or HowTo as appropriate), headline, description, author, datePublished, and any relevant properties. Platform: ${platform}.
+  const prompt = `You are a Schema.org expert. Generate a rich JSON-LD structured data object for the content below.
 
-OUTPUT LANGUAGE: [${langName}] — All text value fields (headline, description, keywords, name, etc.) MUST be written in ${langName}. Do NOT output English text in value fields unless the language is English.
+REQUIRED FIELDS (include ALL of these):
+
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "<concise title>",
+  "description": "<1-2 sentence summary>",
+  "author": { "@type": "Organization", "name": "<author name>" },
+  "datePublished": "<today's date in ISO format>",
+  "dateModified": "<today's date in ISO format>",
+  "keywords": ["<keyword1>", "<keyword2>", "..."],
+  "about": { "@type": "Thing", "name": "<main topic>" },
+  "proficiencyLevel": "Advanced",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://example.com/article" }
+}
+
+Platform context: ${platform}
+OUTPUT LANGUAGE: ${langName} — All text value fields MUST be in ${langName}.
 
 Content to schema-ify:
 ${content.slice(0, 4000)}
 
-RESPOND WITH ONLY THE JSON OBJECT. Do NOT wrap in markdown code fences. Do NOT add explanatory text.`;
+RESPOND WITH ONLY THE JSON OBJECT. No markdown fences. No explanatory text.`;
 
-  const result = await callDeepSeekJSON<Record<string, unknown>>(prompt, {
-    temperature: 0.2,
-    maxTokens: 2048,
-  });
+  try {
+    const result = await callDeepSeekJSON<Record<string, unknown>>(prompt, {
+      temperature: 0.2,
+      maxTokens: 2048,
+    });
 
-  return JSON.stringify(result, null, 2);
+    // Guard: if result is null or empty, build a fallback
+    if (!result || Object.keys(result).length <= 1) {
+      return buildFallbackSchema(content);
+    }
+
+    return JSON.stringify(result, null, 2);
+  } catch {
+    // If all retries fail, return a fallback so the user sees something useful
+    return buildFallbackSchema(content);
+  }
 };
+
+/** Build a minimal but valid JSON-LD schema when the model call fails */
+function buildFallbackSchema(content: string): string {
+  const titleMatch = content.match(/^#\s+(.+)/m) || content.match(/^##\s+(.+)/m);
+  const headline = titleMatch ? titleMatch[1].trim() : 'GEO Optimized Content';
+  const excerpt = content.replace(/[#*`]/g, '').split('\n').find(l => l.trim().length > 20) || '';
+  const today = new Date().toISOString().slice(0, 10);
+
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline,
+    description: excerpt.slice(0, 200),
+    author: { '@type': 'Organization', name: 'GEO Strategic Hub' },
+    datePublished: today,
+    dateModified: today,
+    keywords: ['GEO', 'AI Optimization', 'Content Strategy'],
+    mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://example.com/article' },
+  }, null, 2);
+}

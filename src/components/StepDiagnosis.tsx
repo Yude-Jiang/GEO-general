@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkflowStore } from '../store/workflowStore';
+import { useHistoryStore } from '../store/historyStore';
+import { generateId } from '../utils/id';
 import { analyzeContent, withRetry, refineStrategy, verifyModelClaims, verifyAnchors } from '../services/geminiService';
 import { runMultiModelVerification } from '../services/multiModelService';
 import { getIndustryConfig } from '../config/industries';
@@ -7,8 +9,46 @@ import type { TranslationKeys } from '../i18n/translations';
 import {
   Search, Loader2, CheckCircle2, ChevronRight,
   BarChart3, Lock, AlertCircle, HelpCircle, Info, Download,
-  Activity, Navigation, Lightbulb, AlertTriangle, Zap, Crosshair,
+  Activity, Navigation, Lightbulb, AlertTriangle, Zap, Crosshair, Save,
 } from 'lucide-react';
+
+/** Splits text with numbered items (1. 2. 3. or 1、2、3、) into indented blocks */
+const BulletBlock: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+  if (!text) return null;
+  // Split on numbered patterns: "1. ", "2. ", "1、", "2、", "(1) ", "2) "
+  const segments = text.split(/(?=\d+[\.\、\)]\s)/g).filter(s => s.trim().length > 0);
+  const hasNumbers = segments.length > 1 && /^\d+[\.\、\)]\s/.test(segments[0]?.trim());
+
+  if (!hasNumbers) {
+    return <p className={className || 'text-sm text-slate-600 leading-relaxed font-medium'}>{text}</p>;
+  }
+
+  return (
+    <div className="space-y-2.5">
+      {segments.map((seg, i) => {
+        const trimmed = seg.trim();
+        const match = trimmed.match(/^(\d+)[\.\、\)]\s*(.*)/s);
+        if (match) {
+          return (
+            <div key={i} className="flex gap-3 items-start group">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex-shrink-0 mt-0.5 group-hover:bg-blue-200 transition-colors shadow-sm">
+                {match[1]}
+              </span>
+              <span className={`flex-1 pt-[1px] ${className || 'text-sm text-slate-600 leading-relaxed font-medium'}`}>
+                {match[2]}
+              </span>
+            </div>
+          );
+        }
+        return (
+          <p key={i} className={className || 'text-sm text-slate-600 leading-relaxed font-medium'}>
+            {trimmed}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 interface Props {
   t: TranslationKeys;
@@ -176,6 +216,26 @@ const StepDiagnosis: React.FC<Props> = ({ t }) => {
     URL.revokeObjectURL(url);
   };
 
+  const handleSaveHistory = () => {
+    const addEntry = useHistoryStore.getState().addEntry;
+    const title = seedKeywords.slice(0, 3).join(', ').slice(0, 60) || 'Untitled';
+    addEntry({
+      id: generateId(),
+      title,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      seedKeywords,
+      ecosystem: targetEcosystem,
+      uiLang,
+      diagnosisResult,
+      selectedMonitoringQuestions,
+      selectedPlaybooks: [],
+      finalContent: '',
+      step: 1,
+    });
+    alert((t as any).history?.savedToast || 'Saved to history');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in relative">
       <div className="bg-gradient-to-br from-blue-900 to-blue-950 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden">
@@ -253,28 +313,28 @@ const StepDiagnosis: React.FC<Props> = ({ t }) => {
                   <Activity className="w-5 h-5 text-emerald-500" />
                   <h4 className="font-extrabold text-blue-900 text-sm uppercase">{(t.diagnosis as any).execSummary.marketPulse}</h4>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{diagnosisResult.strategyReport.executiveSummary.marketPulse}</p>
+                <BulletBlock text={diagnosisResult.strategyReport.executiveSummary.marketPulse} />
               </div>
               <div className="p-6 md:p-8 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle className="w-5 h-5 text-amber-500" />
                   <h4 className="font-extrabold text-blue-900 text-sm uppercase">{(t.diagnosis as any).execSummary.coreRoadblocks}</h4>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{diagnosisResult.strategyReport.executiveSummary.coreRoadblocks}</p>
+                <BulletBlock text={diagnosisResult.strategyReport.executiveSummary.coreRoadblocks} />
               </div>
               <div className="p-6 md:p-8 hover:bg-slate-50 transition-colors border-t border-slate-100">
                 <div className="flex items-center gap-2 mb-3">
                   <Navigation className="w-5 h-5 text-blue-500" />
                   <h4 className="font-extrabold text-blue-900 text-sm uppercase">{(t.diagnosis as any).execSummary.strategicPivot}</h4>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{diagnosisResult.strategyReport.executiveSummary.strategicPivot}</p>
+                <BulletBlock text={diagnosisResult.strategyReport.executiveSummary.strategicPivot} />
               </div>
               <div className="p-6 md:p-8 hover:bg-slate-50 transition-colors border-t border-slate-100">
                 <div className="flex items-center gap-2 mb-3">
                   <Lightbulb className="w-5 h-5 text-indigo-500" />
                   <h4 className="font-extrabold text-blue-900 text-sm uppercase">{(t.diagnosis as any).execSummary.keyInsight}</h4>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{diagnosisResult.strategyReport.executiveSummary.keyInsight}</p>
+                <BulletBlock text={diagnosisResult.strategyReport.executiveSummary.keyInsight} />
               </div>
             </div>
           </div>
@@ -445,11 +505,13 @@ const StepDiagnosis: React.FC<Props> = ({ t }) => {
                       </div>
                       <div>
                         <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-amber-500"/> {(t.diagnosis as any).competitorIntel.corpusAdvantage}</h5>
-                        <p className="text-xs text-amber-900 font-bold bg-amber-50 p-2.5 rounded-xl border border-amber-100">{comp.corpusAdvantage}</p>
+                        <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                          <BulletBlock text={comp.corpusAdvantage} className="text-xs text-amber-900 font-bold" />
+                        </div>
                       </div>
                       <div className="pt-2">
                          <h5 className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-1 flex items-center gap-1"><Activity className="w-3 h-3"/> {(t.diagnosis as any).competitorIntel.strategicOpening}</h5>
-                         <p className="text-xs text-blue-900 font-bold leading-relaxed">{comp.strategicOpening}</p>
+                         <BulletBlock text={comp.strategicOpening} className="text-xs text-blue-900 font-bold leading-relaxed" />
                       </div>
                     </div>
                   </div>
@@ -538,7 +600,7 @@ const StepDiagnosis: React.FC<Props> = ({ t }) => {
 
                     <div>
                       <h5 className="text-[9px] font-black text-slate-400 uppercase mb-2 flex items-center gap-1"><Info className="w-3 h-3" /> Core Proposition</h5>
-                      <p className="text-xs text-blue-900 font-bold leading-relaxed">{cluster.coreProposition}</p>
+                      <BulletBlock text={cluster.coreProposition} className="text-xs text-blue-900 font-bold leading-relaxed" />
                     </div>
                   </div>
                   <div className="flex-1 p-0 bg-white">
@@ -598,6 +660,12 @@ const StepDiagnosis: React.FC<Props> = ({ t }) => {
                 <p className="text-[10px] text-gray-400 font-bold">Lock selection to proceed</p>
               </div>
               <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveHistory}
+                  className="bg-slate-800 border border-slate-600/30 text-slate-300 font-black text-xs uppercase px-4 py-4 rounded-xl hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" /> {(t as any).history?.saveBtn || 'Save'}
+                </button>
                 <button
                   onClick={handleExportCSV}
                   disabled={selectedItems.size === 0}

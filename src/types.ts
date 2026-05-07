@@ -159,9 +159,28 @@ export interface AnalysisResult {
   anchorVerifications?: AnchorVerificationResult[];     // Per-anchor real-world validation
 }
 
-export type IntentCategory = 
+export type IntentCategory =
   | 'Academic/Cognition'
   | 'Application/Solution'
   | 'Reliability/Risk'
   | 'Commercial/Selection';
+
+// ─── History Entry ─────────────────────────────────────────────────────────────
+
+export interface HistoryEntry {
+  id: string;                      // UUID
+  title: string;                   // First 60 chars of seed keywords
+  createdAt: string;               // ISO timestamp
+  updatedAt: string;               // ISO timestamp
+  // Snapshot of workflow state
+  seedKeywords: string[];
+  ecosystem: string;
+  uiLang: string;
+  diagnosisResult: AnalysisResult | null;
+  selectedMonitoringQuestions: MonitoringQuestion[];
+  selectedPlaybooks: StrategicPlaybookItem[];
+  finalContent: string;
+  // Metadata
+  step: 1 | 2 | 3;
+}
 

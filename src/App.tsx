@@ -3,16 +3,18 @@ import { useWorkflowStore } from './store/workflowStore';
 import type { Ecosystem } from './store/workflowStore';
 import type { UILang } from './i18n/translations';
 import { translations } from './i18n/translations';
-import { Globe, BookOpen, PenTool, Languages, Zap, Search, Layers } from 'lucide-react';
+import { Globe, BookOpen, PenTool, Languages, Zap, Search, Layers, Clock } from 'lucide-react';
 import StepDiagnosis from './components/StepDiagnosis';
 import StepStrategy from './components/StepStrategy';
 import StepProduction from './components/StepProduction';
 import StandaloneMode from './components/StandaloneMode';
 import ChatAssistant from './components/ChatAssistant';
+import HistoryPanel from './components/HistoryPanel';
 
 const App: React.FC = () => {
   const { currentStep, targetEcosystem, setTargetEcosystem, setStep, diagnosisConfirmed, strategyConfirmed, uiLang, setUiLang, standaloneMode, setStandaloneMode } = useWorkflowStore();
   const t = translations[uiLang];
+  const [showHistory, setShowHistory] = React.useState(false);
 
   const ecosystems: { id: Ecosystem; label: string }[] = [
     { id: 'global', label: t.ecosystems.global },
@@ -52,6 +54,15 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* History Button */}
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest border transition-all bg-slate-800 text-gray-300 border-gray-400/30 hover:text-white hover:border-white/30"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {t.history?.title || 'History'}
+            </button>
+
             {/* Standalone Mode Toggle */}
             <button
               onClick={() => setStandaloneMode(!standaloneMode)}
@@ -168,6 +179,7 @@ const App: React.FC = () => {
       </footer>
       
       <ChatAssistant />
+      <HistoryPanel isOpen={showHistory} onClose={() => setShowHistory(false)} t={t} />
     </div>
   );
 };

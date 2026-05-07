@@ -11,8 +11,10 @@ import {
 } from '../services/geminiService';
 import type { TranslationKeys } from '../i18n/translations';
 import type { PersistedRagSource } from '../types';
+import { useHistoryStore } from '../store/historyStore';
+import { generateId } from '../utils/id';
 import {
-  FileText, Globe, Upload, X, Loader2, Zap,
+  FileText, Globe, Upload, X, Loader2, Zap, Save,
   Link as LinkIcon, AlignLeft, Target, ShieldCheck, ChevronDown, FileBarChart,
 } from 'lucide-react';
 
@@ -79,6 +81,7 @@ const StandaloneMode: React.FC<{ t: TranslationKeys }> = ({ t }) => {
   const uiLang = useWorkflowStore(state => state.uiLang);
   const targetEcosystem = useWorkflowStore(state => state.targetEcosystem);
   const customRegion = useWorkflowStore(state => state.customRegion);
+  const seedKeywords = useWorkflowStore(state => state.seedKeywords);
 
   // ── Input state ──────────────────────────────────────────────────────────
   const [inputTab, setInputTab] = useState<InputTab>('text');
@@ -313,6 +316,27 @@ const StandaloneMode: React.FC<{ t: TranslationKeys }> = ({ t }) => {
         : 'text-slate-400 border-transparent hover:text-blue-900 hover:bg-slate-50'
     }`;
 
+  // ── Save to history ──────────────────────────────────────────────────────
+  const handleSaveHistory = () => {
+    const addEntry = useHistoryStore.getState().addEntry;
+    const title = seedKeywords.slice(0, 3).join(', ').slice(0, 60) || 'Standalone Optimization';
+    addEntry({
+      id: generateId(),
+      title,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      seedKeywords,
+      ecosystem: targetEcosystem,
+      uiLang,
+      diagnosisResult: null,
+      selectedMonitoringQuestions: [],
+      selectedPlaybooks: [],
+      finalContent: output.content || '',
+      step: 3,
+    });
+    alert((t as any).history?.savedToast || 'Saved to history');
+  };
+
   const canOptimize = sources.length > 0 && !output.isGenerating;
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -335,6 +359,12 @@ const StandaloneMode: React.FC<{ t: TranslationKeys }> = ({ t }) => {
             </p>
           </div>
           <div className="ml-auto hidden lg:flex items-center gap-2">
+            <button
+              onClick={handleSaveHistory}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all"
+            >
+              <Save className="w-3.5 h-3.5" /> {(t as any).history?.saveBtn || 'Save'}
+            </button>
             <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-100">
               <ShieldCheck className="w-4 h-4" /> {t.standalone.zeroHallucination}
             </div>
