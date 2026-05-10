@@ -93,7 +93,7 @@ export const translations = {
       cognitiveReady: '就绪',
       footerNote: '内容已锚定参考资料 • AI 引用优化',
       customPromptLabel: '创作指令（可选）',
-      customPromptPlaceholder: '例如：这是针对该痛点的第二篇文章，上次讲了概括，这次请结合北欧极寒天气专门做一次功耗测试的深度对比，风格要极客且犀利...',
+      customPromptPlaceholder: '例如：这是针对该痛点的第二篇文章，上次讲了概括，这次请结合北欧极寒天气专门做一次深度对比，风格要极客且犀利...',
       ragUpload: 'RAG 资料上传',
       ragHint: '上传数据表、规格书、PDF',
       ragSubHint: '真实锚定：内容基于您的原始资料生成',
